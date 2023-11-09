@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://dmcf1qp3n6k15"]
+
+[sub_resource type="GDScript" id="GDScript_6tgrb"]
+script/source = "#############################################################################################################################
+# INITIALIZATION
+# Initialization autoload for preparing the game
+#############################################################################################################################
+
+extends Node
+
+func _ready():
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	SceneManager.current_scene = self
+	SceneManager.change_scene(SceneManager.main, SceneManager.solid_black_to_fade)
+"
+
+[node name="Initialization" type="Node"]
+script = SubResource("GDScript_6tgrb")

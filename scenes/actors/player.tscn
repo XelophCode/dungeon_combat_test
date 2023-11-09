@@ -1,0 +1,1046 @@
+[gd_scene load_steps=36 format=3 uid="uid://ylsasge7hv13"]
+
+[ext_resource type="Script" path="res://scripts/player.gd" id="1_y7ipj"]
+[ext_resource type="PackedScene" uid="uid://o5dk884mkiwn" path="res://scenes/ports/input_port.tscn" id="2_maniu"]
+[ext_resource type="PackedScene" uid="uid://dmdwofoocmryg" path="res://scenes/ports/collision_port.tscn" id="3_lc524"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_scei2"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mak77"]
+albedo_color = Color(0.109804, 0.615686, 0.980392, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ickif"]
+albedo_color = Color(0.286275, 1, 0.0431373, 1)
+
+[sub_resource type="GDScript" id="GDScript_snu84"]
+script/source = "extends Node
+# ACTIONS
+
+@export_group(\"actions\")
+@export var move : Node
+@export var jump : Node
+@export var run : Node
+@export var fall : Node
+@export var attack : Node
+@export var dodge : Node
+@export var block : Node
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_y0gmp"]
+script/source = "extends Action
+# MOVE ACTION
+
+@export var walk_anims : AnimationPlayer
+
+var active : bool = false
+
+func _ready():
+	walk_anims.animation_finished.connect(func(value): if active: walk_anims.play(\"walking\"))
+
+func _action(delta:float):
+	active = false
+	var move_dir : Vector2 = Vector2.ZERO
+	
+	
+	move_dir.x = Input.get_action_strength(\"right\") - Input.get_action_strength(\"left\")
+	move_dir.y = Input.get_action_strength(\"down\") - Input.get_action_strength(\"up\")
+	move_dir = move_dir.normalized()
+	move_dir = move_dir.rotated(-owner.camera_rotation.rotation.y)
+	
+	owner.move_direction = move_dir
+	
+	if move_dir != Vector2.ZERO:
+		active = true
+		walk_anims.play(\"walking\")
+
+"
+
+[sub_resource type="Animation" id="Animation_7rhof"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_fulme"]
+resource_name = "walking"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, -0.0615132, 0), Vector3(0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_4fudn"]
+_data = {
+"RESET": SubResource("Animation_7rhof"),
+"walking": SubResource("Animation_fulme")
+}
+
+[sub_resource type="GDScript" id="GDScript_1cdwg"]
+script/source = "extends Action
+# JUMP ACTION
+
+
+var active : bool = false
+var jump_released : bool = false
+var gravity_strength_mod : float = 1.0
+var applied_gravity : float = 0
+
+func _action(delta:float):
+	if !active:
+		if Input.is_action_just_pressed(\"spacebar\"):
+			applied_gravity = owner.jump_strength
+			active = true
+	
+	
+	
+	if active:
+		if !Input.is_action_pressed(\"spacebar\"):
+			gravity_strength_mod = 3.0
+		applied_gravity -= (owner.gravity_strength * gravity_strength_mod) * delta
+		
+		owner.applied_gravity = applied_gravity
+		
+		if applied_gravity <= 0:
+			owner.applied_gravity = 0
+			active = false
+		
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_vlfhu"]
+script/source = "extends Action
+# RUN ACTION
+
+@export var run_anims : AnimationPlayer
+
+
+const speed_ramp : float = 1.0
+
+var active : bool = false
+var sprint_mod : float = 1.0
+
+func _ready():
+	run_anims.animation_finished.connect(func(value): if active: run_anims.play(\"running\"))
+
+
+func _action(delta:float):
+	if Input.is_action_just_pressed(\"shift\") and !Input.is_action_pressed(\"down\") and Input.is_action_pressed(\"up\"):
+		active = true
+		run_anims.play(\"running\")
+	
+	if active:
+		
+		sprint_mod += speed_ramp * delta
+		sprint_mod = clamp(sprint_mod,1.0,2.0)
+		
+		owner.run_speed = sprint_mod
+		
+		if !Input.is_action_pressed(\"up\") or Input.is_action_pressed(\"down\"):
+			owner.run_speed = 1.0
+			sprint_mod = 1.0
+			active = false
+
+"
+
+[sub_resource type="Animation" id="Animation_yu68l"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_iwub5"]
+resource_name = "running"
+length = 0.6
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, -0.0703425, 0), Vector3(0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_tdt2t"]
+_data = {
+"RESET": SubResource("Animation_yu68l"),
+"running": SubResource("Animation_iwub5")
+}
+
+[sub_resource type="GDScript" id="GDScript_hosqy"]
+script/source = "extends Action
+# FALL ACTION
+
+
+var active : bool = false
+var applied_gravity : float = 0
+
+func _action(delta:float):
+	if owner.is_on_floor():
+		active = false
+		owner.applied_gravity = 0
+	else:
+		active = true
+		applied_gravity -= owner.gravity_strength * delta
+		applied_gravity = clamp(applied_gravity,owner.terminal_velocity,0)
+		
+		owner.applied_gravity = applied_gravity
+		
+	
+	
+	
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_tih31"]
+script/source = "extends Action
+# ATTACK ACTION
+
+@export var attack_anims : AnimationPlayer
+
+
+var active : bool = false
+
+func _action(delta:float):
+	if !attack_anims.is_playing():
+		active = false
+	if not active:
+		if Input.is_action_just_pressed(\"left_mouse_button\"):
+			active = true
+			attack_anims.play(\"sword_attack\")
+
+
+"
+
+[sub_resource type="Animation" id="Animation_6s1ox"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.363954, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-1.15014, -0.185385, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.654766, -0.376262, -0.523249)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:rotation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -0.477243, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_d44mh"]
+resource_name = "sword_attack"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.363954, 0, 0), Vector3(-1.27409, 0, 0), Vector3(-5.91841, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-1.15014, -0.185385, 0), Vector3(-0.721913, -0.185, -0.940981), Vector3(-0.769494, -0.185043, -0.309558), Vector3(-1.15014, -0.185385, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.1, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0.654766, -0.376262, -0.523249), Vector3(1.51639, -0.376262, -0.730169), Vector3(0.654766, -0.376262, -0.523249)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:rotation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.1, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, -0.477243, 0), Vector3(0, -1.47506, 0), Vector3(0, -0.477243, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_sqp2y"]
+_data = {
+"RESET": SubResource("Animation_6s1ox"),
+"sword_attack": SubResource("Animation_d44mh")
+}
+
+[sub_resource type="GDScript" id="GDScript_upmd1"]
+script/source = "extends Action
+
+
+@export var dodge_duration_timer : Timer
+
+var active : bool = false
+
+
+func _ready():
+	dodge_duration_timer.timeout.connect(func(): 
+		active = false
+		owner.dodge_direction = Vector2.ZERO
+		)
+
+
+func _action(delta:float):
+	if not active:
+		if Input.is_action_just_pressed(\"alt\"):
+			active = true
+			dodge_duration_timer.start()
+			if owner.velocity == Vector3.ZERO:
+				owner.dodge_direction = Vector2(0,1).rotated(-owner.camera_rotation.rotation.y)
+			else: 
+				owner.dodge_direction = owner.move_direction
+"
+
+[sub_resource type="GDScript" id="GDScript_psmm5"]
+script/source = "extends Action
+# BLOCK ACTION
+
+
+@export var block_anims : AnimationPlayer
+
+
+var active : bool = false
+
+
+func _action(delta:float):
+	if not active:
+		if Input.is_action_just_pressed(\"right_mouse_button\"):
+			active = true
+			block_anims.play(\"block\")
+	
+	if active:
+		if Input.is_action_just_released(\"right_mouse_button\"):
+			active = false
+			block_anims.play_backwards(\"block\")
+	
+	if !Input.is_action_pressed(\"right_mouse_button\"):
+		active = false
+
+
+"
+
+[sub_resource type="Animation" id="Animation_oajcm"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.654766, -0.376262, -0.523249)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -0.477243, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-1.15014, -0.185385, 0)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:rotation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.363954, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_eibco"]
+resource_name = "block"
+length = 0.15
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.15),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0.654766, -0.376262, -0.523249), Vector3(0.104249, -0.236741, -0.402431)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.15),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, -0.477243, 0), Vector3(0, -0.198514, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.15),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(-1.15014, -0.185385, 0), Vector3(-1.31513, -0.413292, 0.0362196)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("../../../PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword:rotation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.15),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0.363954, 0, 0), Vector3(0.512341, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_xjw4a"]
+_data = {
+"RESET": SubResource("Animation_oajcm"),
+"block": SubResource("Animation_eibco")
+}
+
+[sub_resource type="GDScript" id="GDScript_s2d03"]
+script/source = "extends Node
+# STATES
+
+@export var current : Node
+
+@export_group(\"states\")
+@export var idle : Node
+@export var walking : Node
+@export var running : Node
+@export var jumping : Node
+@export var falling : Node
+@export var dodging : Node
+@export var attacking : Node
+@export var blocking : Node
+
+
+func _ready():
+	current._enter()
+
+
+func check_for_state_change():
+	var new_state = null
+	new_state = current._check_for_state_change()
+	
+	if new_state != null:
+		Debug.player_state.text = new_state.name
+		current._exit()
+		current = new_state
+		current._enter()
+"
+
+[sub_resource type="GDScript" id="GDScript_78cav"]
+script/source = "extends State
+# IDLE STATE
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Move\":
+				if node.active:
+					return states.walking
+			\"Jump\":
+				if node.active:
+					return states.jumping
+			\"Run\":
+				if node.active:
+					return states.running
+			\"Fall\":
+				if node.active:
+					return states.falling
+			\"Dodge\":
+				if node.active:
+					return states.dodging
+			\"Attack\":
+				if node.active:
+					return states.attacking
+			\"Block\":
+				if node.active:
+					return states.blocking
+
+
+
+
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_wso45"]
+script/source = "extends State
+# WALKING STATE
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+
+func _enter():
+	owner.run_speed = 1.0
+	actions.run.sprint_mod = 1.0
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Move\":
+				if not node.active:
+					return states.idle
+			\"Jump\":
+				if node.active:
+					return states.jumping
+			\"Run\":
+				if node.active:
+					return states.running
+			\"Fall\":
+				if node.active:
+					return states.falling
+			\"Dodge\":
+				if node.active:
+					return states.dodging
+			\"Attack\":
+				if node.active:
+					return states.attacking
+			\"Block\":
+				if node.active:
+					return states.blocking
+
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_gr2as"]
+script/source = "extends State
+# RUNNING STATE
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+
+
+
+func _check_for_state_change():
+	
+	for node in available_actions:
+		match node.name:
+			\"Run\":
+				if not node.active:
+					return states.walking
+			\"Jump\":
+				if node.active:
+					return states.jumping
+			\"Fall\":
+				if node.active:
+					return states.falling
+			\"Dodge\":
+				if node.active:
+					return states.dodging
+			\"Attack\":
+				if node.active:
+					return states.attacking
+			\"Block\":
+				if node.active:
+					return states.blocking
+
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_x082s"]
+script/source = "extends State
+# JUMPING STATE
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+
+
+func _enter():
+	actions.jump.gravity_strength_mod = 1.0
+
+
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Jump\":
+				if not node.active:
+					return states.falling
+
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_2os5o"]
+script/source = "extends State
+# FALLING STATE
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+func _exit():
+	actions.fall.applied_gravity = 0
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Fall\":
+				if not node.active:
+					return states.idle
+"
+
+[sub_resource type="GDScript" id="GDScript_46uuy"]
+script/source = "extends State
+# DODGING STATE
+
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+func _enter():
+	owner.move_direction = Vector2.ZERO
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Dodge\":
+				if not node.active:
+					return states.idle
+"
+
+[sub_resource type="GDScript" id="GDScript_hx5ll"]
+script/source = "extends State
+# ATTACKING STATE
+
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+func _enter():
+	owner.run_speed = 1.0
+	actions.run.sprint_mod = 1.0
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Attack\":
+				if not node.active:
+					return states.idle
+			\"Fall\":
+				if node.active:
+					return states.falling
+"
+
+[sub_resource type="GDScript" id="GDScript_6bile"]
+script/source = "extends State
+# BLOCKING STATE
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+func _enter():
+	owner.run_speed = 1.0
+	actions.run.sprint_mod = 1.0
+
+
+func _exit():
+	if actions.block.active:
+		actions.block.active = false
+		actions.block.block_anims.play_backwards(\"block\")
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Block\":
+				if not node.active:
+					return states.idle
+			\"Fall\":
+				if node.active:
+					return states.falling
+"
+
+[node name="player" type="CharacterBody3D" node_paths=PackedStringArray("input_port", "collision_port", "editor_body", "editor_camera_direction", "camera_rotation", "camera_pitch", "states", "hands", "main_camera", "hand_camera")]
+floor_constant_speed = true
+floor_max_angle = 0.872665
+script = ExtResource("1_y7ipj")
+input_port = NodePath("Ports/InputPort")
+collision_port = NodePath("Ports/CollisionPort")
+editor_body = NodePath("EditorBody")
+editor_camera_direction = NodePath("PlayerCamera/Rotation/Pitch/EditorCameraDirection")
+camera_rotation = NodePath("PlayerCamera/Rotation")
+camera_pitch = NodePath("PlayerCamera/Rotation/Pitch")
+states = NodePath("StatesAndActions/States")
+hands = NodePath("PlayerCamera/Rotation/Pitch/Hands")
+main_camera = NodePath("PlayerCamera/Rotation/Pitch/MainCamera")
+hand_camera = NodePath("PlayerCamera/Rotation/Pitch/MainCamera/SubViewportContainer/SubViewport/HandCamera")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.00322, 0)
+shape = SubResource("CapsuleShape3D_scei2")
+
+[node name="EditorBody" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.00322, 0)
+radius = 0.113208
+height = 1.97764
+sides = 16
+material = SubResource("StandardMaterial3D_mak77")
+
+[node name="PlayerCamera" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.47014, 0)
+
+[node name="Rotation" type="Node3D" parent="PlayerCamera"]
+
+[node name="Pitch" type="Node3D" parent="PlayerCamera/Rotation"]
+
+[node name="MainCamera" type="Camera3D" parent="PlayerCamera/Rotation/Pitch"]
+cull_mask = 1048573
+current = true
+fov = 85.0
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="PlayerCamera/Rotation/Pitch/MainCamera"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SubViewport" type="SubViewport" parent="PlayerCamera/Rotation/Pitch/MainCamera/SubViewportContainer"]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(3840, 2160)
+render_target_update_mode = 4
+
+[node name="HandCamera" type="Camera3D" parent="PlayerCamera/Rotation/Pitch/MainCamera/SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.47014, 0)
+cull_mask = 2
+fov = 85.0
+
+[node name="EditorCameraDirection" type="CSGBox3D" parent="PlayerCamera/Rotation/Pitch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.00692236, -0.433869)
+size = Vector3(0.02, 0.02, 0.855)
+material = SubResource("StandardMaterial3D_ickif")
+
+[node name="Hands" type="Node3D" parent="PlayerCamera/Rotation/Pitch"]
+
+[node name="Bobbing" type="Node3D" parent="PlayerCamera/Rotation/Pitch/Hands"]
+
+[node name="Sword" type="Node3D" parent="PlayerCamera/Rotation/Pitch/Hands/Bobbing"]
+transform = Transform3D(1, 0, 0, 0, 0.934496, -0.355972, 0, 0.355972, 0.934496, -1.15014, -0.185385, 0)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword"]
+transform = Transform3D(1, 0, 0, 0, 0.561231, -0.827659, 0, 0.827659, 0.561231, 0.435974, -0.0124069, -0.629781)
+layers = 2
+size = Vector3(0.1, 0.1, 1.19197)
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="PlayerCamera/Rotation/Pitch/Hands/Bobbing/Sword"]
+transform = Transform3D(1, 0, 0, 0, 0.790219, 0.612824, 0, -0.612824, 0.790219, 0.437508, -0.304728, -0.434814)
+layers = 2
+size = Vector3(0.3, 0.047, 0.137)
+
+[node name="Shield" type="Node3D" parent="PlayerCamera/Rotation/Pitch/Hands/Bobbing"]
+transform = Transform3D(0.888264, 0, -0.459332, 0, 1, 0, 0.459332, 0, 0.888264, 0.654766, -0.376262, -0.523249)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="PlayerCamera/Rotation/Pitch/Hands/Bobbing/Shield"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
+layers = 2
+radius = 0.354
+height = 0.0543175
+sides = 16
+
+[node name="StatesAndActions" type="Node" parent="."]
+
+[node name="Actions" type="Node" parent="StatesAndActions" node_paths=PackedStringArray("move", "jump", "run", "fall", "attack", "dodge", "block")]
+script = SubResource("GDScript_snu84")
+move = NodePath("Move")
+jump = NodePath("Jump")
+run = NodePath("Run")
+fall = NodePath("Fall")
+attack = NodePath("Attack")
+dodge = NodePath("Dodge")
+block = NodePath("Block")
+
+[node name="Move" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("walk_anims")]
+script = SubResource("GDScript_y0gmp")
+walk_anims = NodePath("WalkAnims")
+
+[node name="WalkAnims" type="AnimationPlayer" parent="StatesAndActions/Actions/Move"]
+libraries = {
+"": SubResource("AnimationLibrary_4fudn")
+}
+
+[node name="Jump" type="Node" parent="StatesAndActions/Actions"]
+script = SubResource("GDScript_1cdwg")
+
+[node name="Run" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("run_anims")]
+script = SubResource("GDScript_vlfhu")
+run_anims = NodePath("RunAnims")
+
+[node name="RunAnims" type="AnimationPlayer" parent="StatesAndActions/Actions/Run"]
+libraries = {
+"": SubResource("AnimationLibrary_tdt2t")
+}
+
+[node name="Fall" type="Node" parent="StatesAndActions/Actions"]
+script = SubResource("GDScript_hosqy")
+
+[node name="Attack" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("attack_anims")]
+script = SubResource("GDScript_tih31")
+attack_anims = NodePath("AttackAnims")
+
+[node name="AttackAnims" type="AnimationPlayer" parent="StatesAndActions/Actions/Attack"]
+root_node = NodePath("../../../..")
+autoplay = "RESET"
+libraries = {
+"": SubResource("AnimationLibrary_sqp2y")
+}
+
+[node name="Dodge" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("dodge_duration_timer")]
+script = SubResource("GDScript_upmd1")
+dodge_duration_timer = NodePath("DodgeDuration")
+
+[node name="DodgeDuration" type="Timer" parent="StatesAndActions/Actions/Dodge"]
+wait_time = 0.2
+one_shot = true
+
+[node name="Block" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("block_anims")]
+script = SubResource("GDScript_psmm5")
+block_anims = NodePath("BlockAnims")
+
+[node name="BlockAnims" type="AnimationPlayer" parent="StatesAndActions/Actions/Block"]
+libraries = {
+"": SubResource("AnimationLibrary_xjw4a")
+}
+
+[node name="States" type="Node" parent="StatesAndActions" node_paths=PackedStringArray("current", "idle", "walking", "running", "jumping", "falling", "dodging", "attacking", "blocking")]
+script = SubResource("GDScript_s2d03")
+current = NodePath("Idle")
+idle = NodePath("Idle")
+walking = NodePath("Walking")
+running = NodePath("Running")
+jumping = NodePath("Jumping")
+falling = NodePath("Falling")
+dodging = NodePath("Dodging")
+attacking = NodePath("Attacking")
+blocking = NodePath("Blocking")
+
+[node name="Idle" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_78cav")
+available_actions = [NodePath("../../Actions/Move"), NodePath("../../Actions/Jump"), NodePath("../../Actions/Run"), NodePath("../../Actions/Fall"), NodePath("../../Actions/Dodge"), NodePath("../../Actions/Attack"), NodePath("../../Actions/Block")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Walking" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_wso45")
+available_actions = [NodePath("../../Actions/Move"), NodePath("../../Actions/Jump"), NodePath("../../Actions/Run"), NodePath("../../Actions/Fall"), NodePath("../../Actions/Dodge"), NodePath("../../Actions/Attack"), NodePath("../../Actions/Block")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Running" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_gr2as")
+available_actions = [NodePath("../../Actions/Run"), NodePath("../../Actions/Move"), NodePath("../../Actions/Jump"), NodePath("../../Actions/Fall"), NodePath("../../Actions/Dodge"), NodePath("../../Actions/Attack"), NodePath("../../Actions/Block")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Jumping" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_x082s")
+available_actions = [NodePath("../../Actions/Jump"), NodePath("../../Actions/Move")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Falling" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_2os5o")
+available_actions = [NodePath("../../Actions/Move"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Dodging" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_46uuy")
+available_actions = [NodePath("../../Actions/Dodge"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Attacking" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_hx5ll")
+available_actions = [NodePath("../../Actions/Move"), NodePath("../../Actions/Attack"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Blocking" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_6bile")
+available_actions = [NodePath("../../Actions/Block"), NodePath("../../Actions/Move"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Ports" type="Node" parent="."]
+
+[node name="InputPort" parent="Ports" instance=ExtResource("2_maniu")]
+id = "PLAYER"
+
+[node name="CollisionPort" parent="Ports" instance=ExtResource("3_lc524")]
+id = "PLAYER"

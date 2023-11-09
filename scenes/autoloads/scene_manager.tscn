@@ -1,0 +1,81 @@
+[gd_scene load_steps=4 format=3 uid="uid://b0i4n6hexe3r5"]
+
+[ext_resource type="PackedScene" uid="uid://csa3l7myolswn" path="res://scenes/transitions/simple_black_fade_in_out.tscn" id="1_2fol8"]
+[ext_resource type="PackedScene" uid="uid://b4gj165bnoa74" path="res://scenes/transitions/solid_black_to_fade.tscn" id="1_7owtp"]
+
+[sub_resource type="GDScript" id="GDScript_vkolj"]
+script/source = "extends Node
+
+
+@export_file() var main
+
+@export var simple_black_fade_in_out : PackedScene
+@export var solid_black_to_fade : PackedScene
+
+
+var new_scene_path : String
+var loading : bool = false
+var loading_progress : Array
+var load_start_time : int
+
+var current_scene : Node
+var current_transition : Node
+
+
+func change_scene(new_scene:String,transition = null):
+	if transition == null:
+		free_current_scene(new_scene)
+	else:
+		var transition_inst = transition.instantiate()
+		transition_inst.intro_complete.connect(func(): free_current_scene(new_scene))
+		call_deferred(\"add_child\",transition_inst)
+		current_transition = transition_inst
+
+
+func free_current_scene(new_scene:String):
+	current_scene.tree_exited.connect(start_load.bind(new_scene))
+	current_scene.queue_free()
+
+
+func start_load(scene:String):
+	if ResourceLoader.load_threaded_request(scene,\"PackedScene\") == null:
+		print(\"ERROR LOADED SCENE NULL\")
+		get_tree().quit()
+		return
+	
+	new_scene_path = scene
+	loading = true
+	
+	load_start_time = Time.get_ticks_msec()
+
+
+func _process(delta):
+	if loading:
+		var loading_status : int = -1
+		loading_status = ResourceLoader.load_threaded_get_status(new_scene_path,loading_progress)
+		
+		print(str(loading_progress[0]))
+		
+		
+		if loading_status == 3:
+			loading = false
+			
+			print(\"LOADING DONE... took \" + str(Time.get_ticks_msec() - load_start_time) + \" msec\")
+			
+			var new_scene_inst = ResourceLoader.load_threaded_get(new_scene_path).instantiate()
+			get_tree().get_root().call_deferred(\"add_child\",new_scene_inst)
+			
+			current_scene = new_scene_inst
+			
+			new_scene_inst = null
+			new_scene_path = \"\"
+			
+			if current_transition != null:
+				current_transition.outro()
+"
+
+[node name="SceneManager" type="Node"]
+script = SubResource("GDScript_vkolj")
+main = "res://scenes/levels/main.tscn"
+simple_black_fade_in_out = ExtResource("1_2fol8")
+solid_black_to_fade = ExtResource("1_7owtp")

@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3 uid="uid://dp84tq5lpnhkv"]
+
+[sub_resource type="GDScript" id="GDScript_gjs5n"]
+script/source = "#############################################################################################################################
+# MACROS
+# Autoload for common repeating functions to be used across the project.
+#############################################################################################################################
+
+extends Node
+
+
+
+# Check if an object contains a variable and that variable is not null.
+func in_and_not_null(variable:String, object):
+	if variable in object:
+		if object.get(variable) != null:
+			return true
+	
+	return false
+
+
+func body_or_area_entered(area:Area3D, function:Callable):
+	area.area_entered.connect(function)
+	area.body_entered.connect(function)
+
+
+func body_or_area_exited(area:Area3D, function:Callable):
+	area.area_exited.connect(function)
+	area.body_exited.connect(function)
+
+
+
+
+
+
+"
+
+[node name="Macros" type="Node"]
+script = SubResource("GDScript_gjs5n")

@@ -1,0 +1,49 @@
+[gd_scene load_steps=3 format=3 uid="uid://cdkhc4lbttgrv"]
+
+[ext_resource type="PackedScene" uid="uid://o5dk884mkiwn" path="res://scenes/ports/input_port.tscn" id="1_u01bt"]
+
+[sub_resource type="GDScript" id="GDScript_3o0tl"]
+script/source = "#############################################################################################################################
+# INPUT MANAGER
+# Autoload class that manages what object is currently accepting player inputs.
+# Any object that will recieve inputs should have an 'InputPort' node as a child and that child referenced as 'input_port'.
+# The 'InputPort' of this 'InputManager' is used to determine the current input focus.
+#############################################################################################################################
+
+extends Node
+
+@export var input_port : Node
+
+
+# Used to set an object as the current object recieving inputs. Should be called with the 'self' keyword as the parameter.
+func focus(new_focus):
+	var focus_string : String = new_focus.input_port.id
+	input_port.id = focus_string
+
+
+# Compares current input focus with the Caller's 'InputPort'. Should be called with the 'self' keyword as the parameter.
+func check(input_object):
+	var input_object_string : String = input_object.input_port.id
+	
+	if input_port.id == input_object_string:
+		return true
+	else:
+		return false
+
+
+
+
+
+
+
+
+
+
+
+"
+
+[node name="InputManager" type="Node" node_paths=PackedStringArray("input_port")]
+script = SubResource("GDScript_3o0tl")
+input_port = NodePath("InputPort")
+
+[node name="InputPort" parent="." instance=ExtResource("1_u01bt")]

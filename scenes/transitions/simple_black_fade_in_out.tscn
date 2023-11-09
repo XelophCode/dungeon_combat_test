@@ -1,0 +1,100 @@
+[gd_scene load_steps=6 format=3 uid="uid://csa3l7myolswn"]
+
+[sub_resource type="GDScript" id="GDScript_u7ana"]
+script/source = "extends Node
+
+
+@export var anim_player : AnimationPlayer
+
+signal intro_complete
+
+
+
+func outro():
+	anim_player.play(\"fade_out\")
+
+
+func _on_animation_player_animation_finished(anim_name):
+	match anim_name:
+		\"fade_in\":
+			intro_complete.emit()
+			print(\"FADE_IN\")
+		\"fade_out\":
+			queue_free()
+
+"
+
+[sub_resource type="Animation" id="Animation_4ra2j"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0, 0, 0, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_rytc4"]
+resource_name = "fade_in"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 0), Color(0, 0, 0, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_ayil0"]
+resource_name = "fade_out"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CanvasLayer/ColorRect:color")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(0, 0, 0, 1), Color(0, 0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_qgklr"]
+_data = {
+"RESET": SubResource("Animation_4ra2j"),
+"fade_in": SubResource("Animation_rytc4"),
+"fade_out": SubResource("Animation_ayil0")
+}
+
+[node name="simple_black_fade_in_out" type="Node" node_paths=PackedStringArray("anim_player")]
+script = SubResource("GDScript_u7ana")
+anim_player = NodePath("AnimationPlayer")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 128
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+offset_left = -48.0
+offset_top = -52.0
+offset_right = 3912.0
+offset_bottom = 2240.0
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+autoplay = "fade_in"
+libraries = {
+"": SubResource("AnimationLibrary_qgklr")
+}
+
+[connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_player_animation_finished"]

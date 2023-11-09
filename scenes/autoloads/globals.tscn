@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://dh4xlxb4v87fg"]
+
+[sub_resource type="GDScript" id="GDScript_8ufig"]
+script/source = "extends Node
+
+var player : CharacterBody3D = null
+"
+
+[node name="Globals" type="Node"]
+script = SubResource("GDScript_8ufig")

@@ -1,0 +1,114 @@
+[gd_scene load_steps=4 format=3 uid="uid://bnaqtqkq7yeoj"]
+
+[ext_resource type="Theme" uid="uid://hbwwns71ton2" path="res://assets/resources/themes/default_label.tres" id="1_dklo3"]
+[ext_resource type="Theme" uid="uid://cfc1pstffkroc" path="res://assets/resources/themes/default_option_button.tres" id="2_iy4mu"]
+
+[sub_resource type="GDScript" id="GDScript_r1fma"]
+script/source = "#############################################################################################################################
+# DEBUG
+# Debug autoload.
+#############################################################################################################################
+
+extends Node
+
+@export var overlay : CanvasLayer
+@export var player_state : Label
+@export var player_speed : Label
+
+var enabled : bool = true
+
+signal debug_overlay_visibility_changed
+
+func _ready():
+	if !enabled:
+		process_mode = Node.PROCESS_MODE_DISABLED
+
+func _process(delta):
+	if Input.is_action_just_pressed(\"tilde\"):
+		overlay.visible = !overlay.visible
+		debug_overlay_visibility_changed.emit(overlay.visible)
+	
+	if Input.is_action_just_pressed(\"F1\"):
+		get_tree().quit()
+	
+	if Input.is_action_just_pressed(\"escape\"):
+		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		else:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+func _on_max_fps_item_selected(index):
+	match index:
+		0: Engine.max_fps = 0
+		1: Engine.max_fps = 10
+		2: Engine.max_fps = 30
+		3: Engine.max_fps = 60
+		4: Engine.max_fps = 120
+		5: Engine.max_fps = 144
+
+
+func _on_load_main_scene_button_up():
+	SceneManager.change_scene(SceneManager.main, SceneManager.simple_black_fade_in_out)
+"
+
+[node name="Debug" type="Node" node_paths=PackedStringArray("overlay", "player_state", "player_speed")]
+script = SubResource("GDScript_r1fma")
+overlay = NodePath("CanvasLayer")
+player_state = NodePath("CanvasLayer/PlayerState")
+player_speed = NodePath("CanvasLayer/PlayerSpeed")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="PlayerState" type="Label" parent="CanvasLayer"]
+offset_right = 40.0
+offset_bottom = 23.0
+theme = ExtResource("1_dklo3")
+text = "Player State"
+
+[node name="PlayerSpeed" type="Label" parent="CanvasLayer"]
+offset_top = 134.0
+offset_right = 624.0
+offset_bottom = 274.0
+theme = ExtResource("1_dklo3")
+text = "Player Speed"
+
+[node name="MaxFPS" type="OptionButton" parent="CanvasLayer"]
+offset_left = 3310.0
+offset_top = 89.0
+offset_right = 3829.0
+offset_bottom = 234.0
+theme = ExtResource("2_iy4mu")
+item_count = 6
+selected = 0
+popup/item_0/text = "Unlimited"
+popup/item_0/id = 0
+popup/item_1/text = "10"
+popup/item_1/id = 1
+popup/item_2/text = "30"
+popup/item_2/id = 2
+popup/item_3/text = "60"
+popup/item_3/id = 3
+popup/item_4/text = "120"
+popup/item_4/id = 4
+popup/item_5/text = "144"
+popup/item_5/id = 5
+
+[node name="Label" type="Label" parent="CanvasLayer"]
+offset_left = 3318.0
+offset_top = -29.0
+offset_right = 3824.0
+offset_bottom = 111.0
+theme = ExtResource("1_dklo3")
+text = "Framerate"
+
+[node name="LoadMainScene" type="Button" parent="CanvasLayer"]
+offset_left = 3429.0
+offset_top = 2023.0
+offset_right = 3822.0
+offset_bottom = 2136.0
+theme_override_font_sizes/font_size = 56
+text = "Reload Scene"
+
+[connection signal="item_selected" from="CanvasLayer/MaxFPS" to="." method="_on_max_fps_item_selected"]
+[connection signal="button_up" from="CanvasLayer/LoadMainScene" to="." method="_on_load_main_scene_button_up"]

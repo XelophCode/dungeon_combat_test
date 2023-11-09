@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://dmdwofoocmryg"]
+
+[sub_resource type="GDScript" id="GDScript_k8yib"]
+script/source = "#############################################################################################################################
+# COLLISION ID BASE CLASS
+# Used to further define the interactions between areas and bodies.
+#############################################################################################################################
+
+extends Node
+
+
+@export_enum(\"NULL\",\"DISABLED\",\"PLAYER\",\"ENEMY\") var id : String = \"NULL\"
+"
+
+[node name="CollisionPort" type="Node"]
+script = SubResource("GDScript_k8yib")

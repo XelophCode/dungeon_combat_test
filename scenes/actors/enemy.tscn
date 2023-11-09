@@ -1,0 +1,481 @@
+[gd_scene load_steps=23 format=3 uid="uid://b1yvl8xvwww0a"]
+
+[ext_resource type="PackedScene" uid="uid://dmdwofoocmryg" path="res://scenes/ports/collision_port.tscn" id="1_3ypvk"]
+[ext_resource type="Script" path="res://scripts/label_3d_pixel_precision.gd" id="2_ih6r2"]
+
+[sub_resource type="GDScript" id="GDScript_2d3s2"]
+script/source = "extends CharacterBody3D
+
+@export var collision_port : Node
+@export var states : Node
+@export var mesh_rotation : Node3D
+
+var alerted : bool = false
+
+
+var move_direction : Vector2
+var applied_gravity : float = 0
+
+func _ready():
+	pass
+
+
+func _process(delta):
+	states.check_for_state_change()
+	states.current._loop(delta)
+	
+	for action_node in states.current.available_actions:
+		action_node._action(delta)
+	
+	move_and_slide_calculation()
+	
+
+
+func move_and_slide_calculation():
+	velocity = Vector3(move_direction.x,applied_gravity,move_direction.y)
+	
+	move_and_slide()
+
+
+
+
+
+"
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_fer7s"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_e5811"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v3ali"]
+albedo_color = Color(0.631373, 0.203922, 0.164706, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_y04sr"]
+size = Vector3(0.435, 0.315, 0.105)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b77gl"]
+albedo_color = Color(0.180392, 1, 0.0313726, 1)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_0te5t"]
+radius = 5.07488
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_q3r5h"]
+radius = 2.52741
+
+[sub_resource type="GDScript" id="GDScript_cq63n"]
+script/source = "# ACTIONS
+extends Node
+
+
+
+@export_group(\"actions\")
+@export var alert : Node
+@export var move : Node
+@export var attack : Node
+@export var fall : Node
+
+"
+
+[sub_resource type="GDScript" id="GDScript_g0v1i"]
+script/source = "# ALERT ACTION
+extends Action
+
+@export var alert_area : Area3D
+
+var active : bool = false
+
+func _ready():
+	Macros.body_or_area_entered(alert_area,alert)
+	Macros.body_or_area_exited(alert_area,unalert)
+
+
+func _action(delta:float):
+	pass
+
+
+func alert(object):
+	if Macros.in_and_not_null(\"collision_port\",object):
+		match object.collision_port.id:
+			\"PLAYER\":
+				active = true
+
+
+func unalert(object):
+	if Macros.in_and_not_null(\"collision_port\",object):
+		match object.collision_port.id:
+			\"PLAYER\":
+				active = false
+"
+
+[sub_resource type="GDScript" id="GDScript_m2gs7"]
+script/source = "# MOVE ACTION
+extends Action
+
+
+var active : bool = false
+
+
+func _action(delta:float):
+	var dir_to_player = owner.global_position.direction_to(Globals.player.global_position)
+	var dir_to_player_vec2 = Vector2(dir_to_player.x,dir_to_player.z).normalized()
+	
+	owner.move_direction.x = dir_to_player_vec2.x
+	owner.move_direction.y = dir_to_player_vec2.y
+	
+	var dir_to_player_atan2 = atan2(dir_to_player_vec2.y,dir_to_player_vec2.x)
+	owner.mesh_rotation.rotation.y = lerp_angle(owner.mesh_rotation.rotation.y, -dir_to_player_atan2, 0.01)
+	
+	if dir_to_player_vec2 != Vector2.ZERO:
+		active = true
+
+
+
+
+
+
+
+
+
+
+
+
+
+"
+
+[sub_resource type="GDScript" id="GDScript_x2agr"]
+script/source = "# ATTACK ACTION
+extends Action
+
+@export var attack_area : Area3D
+@export var anims : AnimationPlayer
+
+
+var active : bool = false
+
+
+func _ready():
+	Macros.body_or_area_entered(attack_area,start_attack)
+	Macros.body_or_area_exited(attack_area,stop_attack)
+
+
+func _action(delta:float):
+	pass
+
+
+func start_attack(object):
+	if Macros.in_and_not_null(\"collision_port\",object):
+		match object.collision_port.id:
+			\"PLAYER\":
+				active = true
+				anims.play(\"attack\")
+
+
+func stop_attack(object):
+	if Macros.in_and_not_null(\"collision_port\",object):
+		match object.collision_port.id:
+			\"PLAYER\":
+				active = false
+
+
+func _on_animation_player_animation_finished(anim_name):
+	if active:
+		anims.play(anim_name)
+"
+
+[sub_resource type="Animation" id="Animation_siak3"]
+resource_name = "attack"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../Mesh/MeshRotation/Hands/Sword:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 1),
+"transitions": PackedFloat32Array(1, 0.5, 1),
+"update": 0,
+"values": [Vector3(-0.579845, 0.388687, -0.412865), Vector3(-0.485801, -0.129941, -0.799066), Vector3(-0.579845, 0.388687, -0.412865)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../../../Mesh/MeshRotation/Hands/Sword:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 1),
+"transitions": PackedFloat32Array(1, 0.5, 1),
+"update": 0,
+"values": [Vector3(-0.389749, -0.393101, 1.7955e-08), Vector3(-1.14104, -2.02864, 1.85743), Vector3(-0.389749, -0.393101, 1.7955e-08)]
+}
+
+[sub_resource type="Animation" id="Animation_h0efb"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("../../../Mesh/MeshRotation/Hands/Sword:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.579845, 0.388687, -0.412865)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("../../../Mesh/MeshRotation/Hands/Sword:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.389749, -0.393101, 1.7955e-08)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_qbowm"]
+_data = {
+"RESET": SubResource("Animation_h0efb"),
+"attack": SubResource("Animation_siak3")
+}
+
+[sub_resource type="GDScript" id="GDScript_8112p"]
+script/source = "# FALL ACTION
+extends Action
+
+@export var attack_area : Area3D
+
+
+var active : bool = false
+
+
+func _action(delta:float):
+	if owner.is_on_floor():
+		owner.applied_gravity = 0
+	else:
+		owner.applied_gravity = -3.0
+"
+
+[sub_resource type="GDScript" id="GDScript_q1l3u"]
+script/source = "# STATES
+extends Node
+
+@export var current : Node
+
+@export_group(\"states\")
+@export var idle : Node
+@export var alerted : Node
+@export var attacking : Node
+
+@export_group(\"node_references\")
+@export var state_label : Label3D
+
+
+func _ready():
+	state_label.text = current.name
+	state_label.visible = Debug.overlay.visible
+	Debug.debug_overlay_visibility_changed.connect(func(value): state_label.visible = value)
+	
+	current._enter()
+
+
+func check_for_state_change():
+	var new_state = null
+	new_state = current._check_for_state_change()
+	
+	if new_state != null:
+		state_label.text = new_state.name
+		current._exit()
+		current = new_state
+		current._enter()
+
+"
+
+[sub_resource type="GDScript" id="GDScript_q6jrl"]
+script/source = "# IDLE STATE
+extends State
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Alert\":
+				if node.active:
+					return states.alerted
+"
+
+[sub_resource type="GDScript" id="GDScript_2vet7"]
+script/source = "# ALERTED STATE
+extends State
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+func _exit():
+	owner.move_direction = Vector2.ZERO
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Alert\":
+				if not node.active:
+					return states.idle
+			\"Attack\":
+				if node.active:
+					return states.attacking
+"
+
+[sub_resource type="GDScript" id="GDScript_bfaot"]
+script/source = "# ATTACKING STATE
+extends State
+
+@export var available_actions : Array[Node]
+@export_group(\"states_and_actions\")
+@export var actions : Node
+@export var states : Node
+
+
+
+
+func _check_for_state_change():
+	for node in available_actions:
+		match node.name:
+			\"Alert\":
+				if not node.active:
+					return states.idle
+			\"Attack\":
+				if not node.active:
+					return states.alerted
+"
+
+[node name="Enemy" type="CharacterBody3D" node_paths=PackedStringArray("collision_port", "states", "mesh_rotation")]
+script = SubResource("GDScript_2d3s2")
+collision_port = NodePath("Ports/CollisionPort")
+states = NodePath("StatesAndActions/States")
+mesh_rotation = NodePath("Mesh/MeshRotation")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.06098, 0)
+shape = SubResource("CapsuleShape3D_fer7s")
+
+[node name="Mesh" type="Node3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0, 1.06098, 0)
+
+[node name="MeshRotation" type="Node3D" parent="Mesh"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Mesh/MeshRotation"]
+mesh = SubResource("CapsuleMesh_e5811")
+skeleton = NodePath("../../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_v3ali")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="Mesh/MeshRotation"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, -0.8135)
+mesh = SubResource("PrismMesh_y04sr")
+surface_material_override/0 = SubResource("StandardMaterial3D_b77gl")
+
+[node name="Hands" type="Node3D" parent="Mesh/MeshRotation"]
+
+[node name="Sword" type="Node3D" parent="Mesh/MeshRotation/Hands"]
+transform = Transform3D(0.923726, 0.145544, -0.354327, 1.66084e-08, 0.925004, 0.379957, 0.383054, -0.350976, 0.85445, -0.579845, 0.388687, -0.412865)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Mesh/MeshRotation/Hands/Sword"]
+size = Vector3(0.1, 1.62, 0.1)
+
+[node name="AlertArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.06098, 0)
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="AlertArea"]
+shape = SubResource("SphereShape3D_0te5t")
+
+[node name="AttackArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.06098, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackArea"]
+shape = SubResource("SphereShape3D_q3r5h")
+
+[node name="StateLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4975, 0)
+pixel_size = 0.002
+billboard = 2
+text = "Testing"
+font_size = 311
+outline_size = 52
+script = ExtResource("2_ih6r2")
+precise_pixel_size = 0.002
+
+[node name="StatesAndActions" type="Node" parent="."]
+
+[node name="Actions" type="Node" parent="StatesAndActions" node_paths=PackedStringArray("alert", "move", "attack", "fall")]
+script = SubResource("GDScript_cq63n")
+alert = NodePath("Alert")
+move = NodePath("Move")
+attack = NodePath("Attack")
+fall = NodePath("Fall")
+
+[node name="Alert" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("alert_area")]
+script = SubResource("GDScript_g0v1i")
+alert_area = NodePath("../../../AlertArea")
+
+[node name="Move" type="Node" parent="StatesAndActions/Actions"]
+script = SubResource("GDScript_m2gs7")
+
+[node name="Attack" type="Node" parent="StatesAndActions/Actions" node_paths=PackedStringArray("attack_area", "anims")]
+script = SubResource("GDScript_x2agr")
+attack_area = NodePath("../../../AttackArea")
+anims = NodePath("AnimationPlayer")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="StatesAndActions/Actions/Attack"]
+libraries = {
+"": SubResource("AnimationLibrary_qbowm")
+}
+
+[node name="Fall" type="Node" parent="StatesAndActions/Actions"]
+script = SubResource("GDScript_8112p")
+
+[node name="States" type="Node" parent="StatesAndActions" node_paths=PackedStringArray("current", "idle", "alerted", "attacking", "state_label")]
+script = SubResource("GDScript_q1l3u")
+current = NodePath("Idle")
+idle = NodePath("Idle")
+alerted = NodePath("Alerted")
+attacking = NodePath("Attacking")
+state_label = NodePath("../../StateLabel")
+
+[node name="Idle" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_q6jrl")
+available_actions = [NodePath("../../Actions/Alert"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Alerted" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_2vet7")
+available_actions = [NodePath("../../Actions/Alert"), NodePath("../../Actions/Move"), NodePath("../../Actions/Attack"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Attacking" type="Node" parent="StatesAndActions/States" node_paths=PackedStringArray("available_actions", "actions", "states")]
+script = SubResource("GDScript_bfaot")
+available_actions = [NodePath("../../Actions/Move"), NodePath("../../Actions/Attack"), NodePath("../../Actions/Alert"), NodePath("../../Actions/Fall")]
+actions = NodePath("../../Actions")
+states = NodePath("..")
+
+[node name="Ports" type="Node" parent="."]
+
+[node name="CollisionPort" parent="Ports" instance=ExtResource("1_3ypvk")]
+id = "ENEMY"
+
+[connection signal="animation_finished" from="StatesAndActions/Actions/Attack/AnimationPlayer" to="StatesAndActions/Actions/Attack" method="_on_animation_player_animation_finished"]
